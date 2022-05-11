@@ -6,7 +6,7 @@ const io = require('socket.io')(server)
 
 
 app.get('/', function(req, res) {
-  res.sendFile('index.html' , { root : __dirname});
+  res.sendFile(__dirname + "/index.html";
 });
 
 app.use("/static", express.static('./static/'));
