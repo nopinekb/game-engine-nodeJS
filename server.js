@@ -202,8 +202,8 @@ io.on('connection', (socket) => {
         var dx = Mx - x;
         var dy = My - y;
         var angle = Math.atan2(dy, dx);
-        velocity.xVelocity = SPEED * Math.cos(angle);
-        velocity.yVelocity = SPEED * Math.sin(angle);
+        velocity.xVelocity = SPEED * 2 * Math.cos(angle);
+        velocity.yVelocity = SPEED * 2 * Math.sin(angle);
         return velocity;
 
     }
@@ -232,54 +232,54 @@ io.on('connection', (socket) => {
 
                 //console.log(Mx + " " + My);
             }
-            var a  = collObj(100,100,100,100,players[index].id,players[index].x-10,players[index].y-10,20,20);
+            var a  = collObj(300,300,500,50,players[index].id,players[index].x-10,players[index].y-10,20,20);
             //console.log(a);
             if(a.leftPush < 1 || a.rightPush < 1 || a.upPush < 1 || a.downPush < 1){
                 players[index].x -= 10*a.leftPush;
                 players[index].x += 10*a.rightPush;
                 players[index].y -= 10*a.upPush;
                 players[index].y += 10*a.downPush;
-                bullets[0].x +=1;
             }
 
         }
         for (var index = 0; index < bullets.length; ++index){
-            for (var indexP = 0; indexP < players.length; ++indexP)
-                if(collBullet(bullets[index].id,bullets[index].x,bullets[index].y,5,5,players[indexP].id,players[indexP].x-10,players[indexP].y-10,20,20)){
-                    //console.log("true :" + bullets[index].id + " " + players[indexP].id);
-                    players[indexP].health -= 20;
-                    if(players[indexP].health <= 0){
-                        console.log("death :" +players[indexP].id)
-                        DeletePlayer(players[indexP].id);
+
+                for (var indexP = 0; indexP < players.length; ++indexP){
+                    if(players[indexP] !== undefined){
+                        if(bullets[index] !== undefined && collBullet(bullets[index].id,bullets[index].x,bullets[index].y,5,5,players[indexP].id,players[indexP].x-10,players[indexP].y-10,20,20)){
+                            
+                            bullets.splice(index,1);
+                            players[indexP].health -= 20;
+
+                            if(players[indexP].health <= 0){
+                                console.log("death :" +players[indexP].id)
+                                DeletePlayer(players[indexP].id);
+
+                            }
+                        }
+                        if(bullets[index] !== undefined && collBullet(bullets[index].id,bullets[index].x,bullets[index].y,5,5,0,300,300,500,50)){
+                            bullets.splice(index,1);
+                        }
 
                     }
-                };
-            if(bullets[index] !== undefined && bullets[index].id == id){
+                }
+                if(bullets[index] !== undefined && bullets[index].id == id){
 
-                var bulletS = bulletSpeed(bullets[index].Mx, bullets[index].Sx, bullets[index].My, bullets[index].Sy);
-                
-                
-                //console.log(bullets[index].id + " : " + bulletS.xVelocity + " : " + bulletS.yVelocity);
-                bullets[index].x += bulletS.xVelocity;
-                bullets[index].y += bulletS.yVelocity;
+                    var bulletS = bulletSpeed(bullets[index].Mx, bullets[index].Sx, bullets[index].My, bullets[index].Sy);
+                    
+                    
+                    //console.log(bullets[index].id + " : " + bulletS.xVelocity + " : " + bulletS.yVelocity);
+                    bullets[index].x += bulletS.xVelocity;
+                    bullets[index].y += bulletS.yVelocity;
 
-            }
-
-                
-            
+                }           
          }
-
-
-
-        
-
-        
         
     }
 
 
     function deleteBullets() {
-        var index = bullets.findIndex(el => el.x <= -2000 || el.y <= -2000 || el.x >= 2000 || el.y >= 2000);
+        var index = bullets.findIndex(el => el.x <= 0 || el.y <= 0 || el.x >= 2000 || el.y >= 2000);
         if (index !== -1){
             bullets.splice(index,1);
         } 

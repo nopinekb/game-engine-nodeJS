@@ -30,6 +30,7 @@ var left = 0, right = 0, up = 0, down = 0;
 var dirs = {[LEFT]:0, [UP]:0, [RIGHT]:0, [DOWN]:0};
 var angle = Math.atan2(x, y) / Math.PI * 180;
 var Sx, Sy, Mx, My;
+var BMx, BMy;
 var canvasW =canvas.width , canvasH= canvas.height;
 var camera = {
   leftTopPos: { x: 0, y: 0 },
@@ -37,6 +38,10 @@ var camera = {
   scale: 1,
   speed: 4
 };
+
+
+
+
 function updateCameraSize() {
   camera.size = {
     x: canvas.width / camera.scale,
@@ -83,17 +88,21 @@ function PlayerControl() {
 		right = dirs[RIGHT] * SPEED;
 		up = dirs[UP] * SPEED;
 		down = dirs[DOWN] * SPEED;
-		camera.leftTopPos.x -= dirs[LEFT] * camera.speed ;
-  		camera.leftTopPos.x += dirs[RIGHT] * camera.speed;
-  		camera.leftTopPos.y -= dirs[UP] * camera.speed;
-  		camera.leftTopPos.y += dirs[DOWN] * camera.speed;
+		//camera.leftTopPos.x -= dirs[LEFT] * camera.speed ;
+  		//camera.leftTopPos.x += dirs[RIGHT] * camera.speed;
+  		//camera.leftTopPos.y -= dirs[UP] * camera.speed;
+  		//camera.leftTopPos.y += dirs[DOWN] * camera.speed;
 	}, LoopSpeed)
 };
-document.onmousemove = function(ve){
 
-    Mx = ve.offsetX ;
-    My = ve.offsetY ;
-   
+
+document.onmousemove = function(e){
+	let z = window.getComputedStyle(canvas).zoom || 1;     
+	Mx = e.pageX/z - e.target.offsetLeft,
+	My = e.pageY/z - e.target.offsetTop;
+    BMx = e.clientX + camera.leftTopPos.x;	
+    BMy = e.clientY + camera.leftTopPos.y;
+
 }
 document.onmousedown = function(ve){
 
@@ -103,8 +112,8 @@ document.onmousedown = function(ve){
 		y : y,
 		Sx : x,
 		Sy : y,
-		Mx: Mx,
-		My : My
+		Mx: BMx,
+		My : BMy
 	}
 	socket.emit('mouse', mouse);
    
@@ -117,9 +126,9 @@ socket.on('draw', function(players, bullets){
 	ctx.clearRect(0,0, canvasW,canvasH);
 	ctx.beginPath();
 	ctx.save();
-	//ctx.translate(-camera.leftTopPos.x * camera.scale, -camera.leftTopPos.y * camera.scale);
+	ctx.translate(-camera.leftTopPos.x * camera.scale, -camera.leftTopPos.y * camera.scale);
 
-	//ctx.scale(camera.scale, camera.scale);
+	ctx.scale(camera.scale, camera.scale);
 	
 	for (var index = 0; index < players.length; ++index) {
 
@@ -129,63 +138,85 @@ socket.on('draw', function(players, bullets){
 		} 
 		ctx.save();
 		
-		var a = players[index].Mx - players[index].x;
-		var b = players[index].My - players[index].y;
+		var a = players[index].Mx - centerX;
+		var b = players[index].My - centerY;
+
+		//console.log("ff " + players[index].Mx + " : " + players[index].My);
 		angle = Math.atan2(a, b)* (180 / Math.PI);
-		//console.log(players[index].x +" "+ players[index].y);
 
 		ctx.translate(players[index].x,players[index].y);
 		ctx.rotate(-angle * Math.PI / 180);
 
-		
 		ctx.fillRect(players[index].x-players[index].x-playerCenterW,players[index].y-players[index].y-playerCenterH, playerWidth, playerHeight);
-
-
 
 		ctx.fillRect(players[index].x-players[index].x-5,players[index].y-players[index].y, 10, 15);
 
 		ctx.restore();
 
-		
 		ctx.font = "20px Arial";
-		ctx.fillText(players[index].id + " " + players[index].health, players[index].x-110, players[index].y-playerHeight); 
+		ctx.fillText("HP: " +players[index].health, players[index].x-40, players[index].y-playerHeight); 
+		ctx.stroke();
 
-
-		
-
-		
-		//positionHTML.innerHTML = "now playing: " + players.length + "<br />" + JSON.stringify(players);
+		positionHTML.innerHTML = "players: " + players.length;
+		// + "<br />" + JSON.stringify(players);
 	}
 
-
-	ctx.fillRect(100,100,100,100);
-
-
-	for (var index = 0; index < bullets.length; ++index){
-
-		drawCircle(ctx, bullets[index].x, bullets[index].y, 5, 'cyan', 'black', 2)
-	}
-
-	for (var i = 0; i <= 800; i+=40) {
+	for (var i = 0; i <= 2000; i+=40) {
 	   ctx.beginPath();
 	   ctx.moveTo(0, i);
-	   ctx.lineTo(800, i);
-	   ctx.strokeStyle = '#1a2edb';
+	   ctx.lineTo(2000, i);
+	   ctx.fillStyle = '1a2edb';
+	   ctx.strokeStyle = '1a2edb';
+	   ctx.fill();
 	   ctx.stroke();
 		
 	}
-	for (var i = 0; i <= 800; i+=40) {
+	for (var i = 0; i <= 2000; i+=40) {
 	   ctx.beginPath();
 	   ctx.moveTo(i, 0);
-	   ctx.lineTo(i, 800);
-	   ctx.strokeStyle = '#1a2edb';
+	   ctx.lineTo(i, 2000);
+	   ctx.fillStyle = '1a2edb';
+	   ctx.strokeStyle = '1a2edb';
+	   ctx.fill();
 	   ctx.stroke();
 	}
-	
+	ctx.beginPath();
+	ctx.fillStyle = 'black';
+	ctx.fillRect(300,300,500,50);
+	ctx.fill();
+	ctx.stroke();
+
+	for (var index = 0; index < bullets.length; ++index){
+		ctx.beginPath();
+		ctx.arc(bullets[index].x, bullets[index].y, 5, 0, 2 * Math.PI, false);
+		ctx.fillStyle = 'cyan';
+		ctx.lineWidth = 2;	
+		ctx.strokeStyle = 'black';
+		ctx.fill();
+		ctx.stroke();
+	}
+
 	ctx.restore();
+	positionCameraUpdate();
 
 });
 
+function positionCameraUpdate(){
+	if(x-camera.leftTopPos.x < centerX-5){
+
+		camera.leftTopPos.x -= 3*(centerX/(x-camera.leftTopPos.x));
+
+	}
+	if(x-camera.leftTopPos.x > centerX+5){
+		camera.leftTopPos.x += 3*((x-camera.leftTopPos.x)/centerX);
+	}
+	if(y-camera.leftTopPos.y < centerY-5){
+		camera.leftTopPos.y -= 3*(centerY/(y-camera.leftTopPos.y));
+	}
+	if(y-camera.leftTopPos.y > centerY+5){
+		camera.leftTopPos.y += 3*((y-camera.leftTopPos.y)/centerY);
+	}
+}
 
 function positionUpdate() {
 	const position = {
@@ -205,23 +236,23 @@ function positionUpdate() {
 }
 
 function drawCircle(ctx, x, y, radius, fill, stroke, strokeWidth) {
-  ctx.beginPath()
-  ctx.arc(x, y, radius, 0, 2 * Math.PI, false)
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
   if (fill) {
-    ctx.fillStyle = fill
-    ctx.fill()
+    ctx.fillStyle = fill;
+    ctx.fill();
   }
   if (stroke) {
-    ctx.lineWidth = strokeWidth
-    ctx.strokeStyle = stroke
-    ctx.stroke()
+    ctx.lineWidth = strokeWidth;
+    ctx.strokeStyle = stroke;
   }
+  ctx.stroke()
 }
 
 
 
 socket.on('count', function(count) {
-	counter.innerHTML = "people on the server online: " + count;
+	counter.innerHTML = "online: " + count;
 	counterPlayers = count;
 });
 
@@ -242,7 +273,7 @@ startBtn.addEventListener('click', () => {
 		downPush : downPush,
 		Mx : Mx,
 		My : My,
-		health : 2000
+		health : 200
 
 	};
     socket.emit('start', start);
