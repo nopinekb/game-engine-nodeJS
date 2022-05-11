@@ -1,15 +1,15 @@
 const express = require('express')
 const app = express()
 const port = process.env.PORT || 3000
-const server = app.listen(process.env.PORT || port)
+const server = app.listen(process.env.PORT || 3000)
 const io = require('socket.io')(server)
 
 
 app.get('/', function(req, res) {
-  res.sendFile(__dirname + "/index.html";
+  res.sendFile(__dirname + "/index.html");
 });
 
-app.use("/static", express.static('./static/'));
+app.use("/client.js", express.static(__dirname + '/client.js'));
 
 let players = [];
 let bullets = [];
@@ -212,6 +212,7 @@ io.on('connection', (socket) => {
 
 
     function UpdatePlayer(id,x,y,left,right,up,down, Mx, My){
+        
          for (var index = 0; index < players.length; ++index) {
             if(players[index].id == id){
                 //players[index].x = x;
@@ -250,11 +251,12 @@ io.on('connection', (socket) => {
                     if(players[indexP].health <= 0){
                         console.log("death :" +players[indexP].id)
                         DeletePlayer(players[indexP].id);
+
                     }
                 };
-            if(bullets[index].id == id){
+            if(bullets[index] !== undefined && bullets[index].id == id){
 
-                    var bulletS = bulletSpeed(bullets[index].Mx, bullets[index].Sx, bullets[index].My, bullets[index].Sy);
+                var bulletS = bulletSpeed(bullets[index].Mx, bullets[index].Sx, bullets[index].My, bullets[index].Sy);
                 
                 
                 //console.log(bullets[index].id + " : " + bulletS.xVelocity + " : " + bulletS.yVelocity);
@@ -281,6 +283,13 @@ io.on('connection', (socket) => {
         if (index !== -1){
             bullets.splice(index,1);
         } 
+
+        for (var indexP = 0; indexP < bullets.length; ++indexP){
+            var id1 = players.findIndex(el => el.id === bullets[indexP].id );
+            if (id1 == -1){
+                bullets.splice(indexP,1);
+            }
+        }
     }
 
 
@@ -291,19 +300,16 @@ io.on('connection', (socket) => {
     }
 
     function DeletePlayer(id){
+        
         for (var index = 0; index < players.length; ++index) {
              if(players[index].id == id){
                 players.splice(index,1);
             }
+
         }
-        
-        /*console.log(bullets.length);
-        for (var index1 = 0; index1 < 100; ++index1){
-            if(bullets[index1].id == id){
-                console.log(bullets[index1].id);
-                bullets.splice(index1,1);
-            } 
-        }*/
+
+
+
 
         socket.emit('reload', id);
     }
