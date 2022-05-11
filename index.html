@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>game-engine</title>
+</head>
+<body>
+    <style type="text/css">
+        *{
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        canvas { 
+            margin: auto;
+            display: block;
+            position: absolute;
+            top: 0; 
+            left: 0;
+            right: 0;
+            bottom: 0;
+            image-rendering: pixelated;
+        }
+    </style>
+
+    <canvas id="canvas" width="800" height="600">></canvas>
+
+    <button id="start" style="position: absolute; top:50%; left:50% " >start</button> 
+    <div id="counter" style="position: absolute; top:2%; left:1%">0</div>
+    <p></p>
+    <div id="position" style="position: absolute; top:4%; left:1%"></div>
+
+    <div id="collisionR" style="position: absolute; top:6%; left:1%"></div>
+    <div id="collisionL" style="position: absolute; top:8%; left:1%"></div>
+    <div id="collisionU" style="position: absolute; top:10%; left:1%"></div>
+    <div id="collisionD" style="position: absolute; top:12%; left:1%"></div>
+
+
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+    <script src="static/client.js"></script>
+</body>
+</html>
