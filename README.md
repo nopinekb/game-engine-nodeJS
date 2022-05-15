@@ -9,4 +9,4 @@ realased:
 - collision's find with another players, objects and bullets
 
 
-DEMO: https://dashboard.heroku.com/apps/game1231/deploy/heroku-git
+DEMO: https://game1231.herokuapp.com/
