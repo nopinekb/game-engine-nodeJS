@@ -10,14 +10,17 @@ app.get('/', function(req, res) {
 });
 
 app.use("/client.js", express.static(__dirname + '/client.js'));
+app.use("/style.css", express.static(__dirname + '/style.css'));
 
 let players = [];
 let bullets = [];
+let objects = [];
+var objectsLen = 1;
 var playerWidth = 20;
 var playerHeight = 20;
 var SPEED = 4;
 
-
+objects.push({id : 1, x : 300, y : 300, width : 500, height : 50});
 
 io.on('connection', (socket) => {
 
@@ -187,7 +190,7 @@ io.on('connection', (socket) => {
     } 
     function collBullet(objectID, objectX, objectY, objectW, objectH,playerID, playerX, playerY, playerW, playerH){
         //console.log(objectX + " : " + objectY + " & " + playerX + " : " + playerY);
-        if(objectID !== playerID &&playerY < objectY+objectH && playerY+playerH > objectY && playerX+playerW > objectX && playerX < objectX+objectW ){
+        if((objectID !== playerID || playerW == 25)  && playerY < objectY+objectH && playerY+playerH > objectY && playerX+playerW > objectX && playerX < objectX+objectW ){
             return true;
         }
         else return false;
@@ -210,43 +213,75 @@ io.on('connection', (socket) => {
 
 
 
-
-    function UpdatePlayer(id,x,y,left,right,up,down, Mx, My){
+    var lS = 0, rS = 0, uS = 0, dS = 0;
+    function UpdatePlayer(id,x,y,left,right,up,down, Mx, My,out){
         
          for (var index = 0; index < players.length; ++index) {
             if(players[index].id == id){
                 //players[index].x = x;
                 //players[index].y = y;
+                players[index].out = out;
+
+                
+                
                 players[index].left = left;
                 players[index].right = right;                
                 players[index].up = up;
                 players[index].down = down;
 
-                players[index].x -= left;
-                players[index].x += right;
-                players[index].y -= up;
-                players[index].y += down; 
+                
+                if(players[index].left !== 0 ){
+                    if(lS < 3.1) lS = 0.2+lS;
+                }else if (lS >= 0) lS = lS - 0.2;
+                else lS = 0;
+                if(players[index].right !== 0){
+                    if (rS < 3.1) rS = 0.2+rS;
+                }else if(rS >= 0) rS = rS - 0.2; else rS = 0;
+                if(players[index].up !== 0){
+                    if (uS < 3.1) uS = 0.2+uS; 
+                }else if(uS >= 0) uS = uS - 0.2; else uS = 0;
+                if(players[index].down !== 0){
+                    if(dS < 3.1) dS = 0.2+dS;
+                }else if(dS >= 0) dS = dS - 0.2; else dS = 0;
+                //console.log("ls: " + lS);
+
+                players[index].x -= lS;
+                players[index].x += rS;
+                players[index].y -= uS;
+                players[index].y += dS; 
+                
+                //players[index].x -= left*4;
+                //players[index].x += right*4;
+                //players[index].y -= up*4;
+                //players[index].y += down*4; 
 
                 players[index].Mx = Mx;  
                 players[index].My = My;
 
                 //console.log(Mx + " " + My);
+                for (var indexO = 0; indexO < objects.length; ++indexO) {
+                    if(players[index] !== undefined){
+                        var a  = collObj(objects[indexO].x,objects[indexO].y,objects[indexO].width,objects[indexO].height,players[index].id,players[index].x-10,players[index].y-10,20,20);
+                        
+                        //console.log(a);
+                            if(a.leftPush < 1) players[index].x += 3.4; 
+                            if(a.rightPush < 1) players[index].x -= 3.4; 
+                            if(a.upPush < 1) players[index].y += 3.4;   
+                            if(a.downPush < 1) players[index].y -= 3.4;   
+                    }
+                }
             }
-            var a  = collObj(300,300,500,50,players[index].id,players[index].x-10,players[index].y-10,20,20);
-            //console.log(a);
-            if(a.leftPush < 1 || a.rightPush < 1 || a.upPush < 1 || a.downPush < 1){
-                players[index].x -= 10*a.leftPush;
-                players[index].x += 10*a.rightPush;
-                players[index].y -= 10*a.upPush;
-                players[index].y += 10*a.downPush;
-            }
+
+                
+            
 
         }
         for (var index = 0; index < bullets.length; ++index){
 
                 for (var indexP = 0; indexP < players.length; ++indexP){
                     if(players[indexP] !== undefined){
-                        if(bullets[index] !== undefined && collBullet(bullets[index].id,bullets[index].x,bullets[index].y,5,5,players[indexP].id,players[indexP].x-10,players[indexP].y-10,20,20)){
+                        if(bullets[index] !== undefined && collBullet(bullets[index].id,bullets[index].x,bullets[index].y,5,5,
+                            players[indexP].id,players[indexP].x,players[indexP].y,20,20)){
                             
                             bullets.splice(index,1);
                             players[indexP].health -= 20;
@@ -257,20 +292,32 @@ io.on('connection', (socket) => {
 
                             }
                         }
-                        if(bullets[index] !== undefined && collBullet(bullets[index].id,bullets[index].x,bullets[index].y,5,5,0,300,300,500,50)){
-                            bullets.splice(index,1);
+
+                        for (var indexO = 0; indexO < objects.length; ++indexO) {
+                            if(bullets[index] !== undefined && collBullet(bullets[index].id,bullets[index].x,bullets[index].y,5,5,
+                                objects[indexO].id,objects[indexO].x,objects[indexO].y,objects[indexO].width,objects[indexO].height)){
+                                    
+                                bullets.splice(index,1);
+                            }
+                                
                         }
+                            
+                        
 
                     }
                 }
                 if(bullets[index] !== undefined && bullets[index].id == id){
-
-                    var bulletS = bulletSpeed(bullets[index].Mx, bullets[index].Sx, bullets[index].My, bullets[index].Sy);
+                    
+                        var bulletVelocity = bulletSpeed(bullets[index].Mx, bullets[index].Sx, bullets[index].My, bullets[index].Sy);
+                        bullets[index].velocity = '1';
+                    
                     
                     
                     //console.log(bullets[index].id + " : " + bulletS.xVelocity + " : " + bulletS.yVelocity);
-                    bullets[index].x += bulletS.xVelocity;
-                    bullets[index].y += bulletS.yVelocity;
+                    
+                        bullets[index].x += bulletVelocity.xVelocity;
+                        bullets[index].y += bulletVelocity.yVelocity;
+                    
 
                 }           
          }
@@ -290,12 +337,20 @@ io.on('connection', (socket) => {
                 bullets.splice(indexP,1);
             }
         }
+
+        for (var indexO = 0; indexO < objects.length; ++indexO){
+            var id2 = players.findIndex(el => el.id === objects[indexO].id);
+            if (id2 == -1 && objects[indexO].id !== 1){
+                objects.splice(indexO,1);
+            }
+        }
+
     }
 
 
     function MakePlayer(id,x,y,left,right,up,down,leftPush,rightPush,upPush,downPush, Mx, My, health) {      
         if (players.filter(item=> item.id == id).length == 0){
-            players.push({id, x, y, left, right, up, down, leftPush, rightPush, upPush, downPush, Mx, My, health});
+            players.push({id, x, y, left, right, up, down, leftPush, rightPush, upPush, downPush, Mx, My, health : 200,out : 0});
         }
     }
 
@@ -308,19 +363,22 @@ io.on('connection', (socket) => {
 
         }
 
-
-
-
+       
         socket.emit('reload', id);
     }
 
     socket.on('position', function(position) {
 
-        UpdatePlayer(position.id,position.x,position.y,
-                    position.left,position.right,position.up,position.down,position.Mx,position.My);
+        UpdatePlayer(
+                    position.id,position.x,position.y,
+                    position.left,position.right,position.up,
+                    position.down,position.Mx,position.My,
+                    position.out
+                    );
+        
         coll();
-        deleteBullets()
-
+        deleteBullets();
+        objectsUpdate();
         socket.emit('draw', players, bullets);
     });
 
@@ -333,14 +391,29 @@ io.on('connection', (socket) => {
         bullets.shift
         setTimeout(clearBullets, 10000);
     }*/
-
-
+    socket.on('object', function(coords){
+        objects.push({id : coords.id, x : coords.Mx, y : coords.My, width : 25, height : 130});
+        //socket.emit('objectsUpdate', objects);
+        console.log(objects.length + " - " + objectsLen);
+        socket.emit('objectsUpdate', objects);
+        
+        
+    });
+    function objectsUpdate(){
+        if (objects.length !== objectsLen){
+            socket.emit('objectsUpdate', objects);
+            objectsLen = objects.length;
+            console.log(objects.length + " - " + objectsLen);
+        }
+    }
 
 
     socket.on('start', function(start) {
         MakePlayer(start.id,start.x,start.y,
                     start.left,start.right,start.up,start.down,
-                    start.leftPush,start.rightPush,start.upPush,start.downPush,start.Mx,start.My,start.health)
+                    start.leftPush,start.rightPush,start.upPush,start.downPush,start.Mx,start.My);
+        socket.emit('objectsUpdate', objects);
+        console.log(objects.length + " - " + objectsLen);
     });
 
 

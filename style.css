@@ -1,0 +1,43 @@
+*{
+    margin: 0 !important;
+    
+}
+html, body {
+    margin: 0 !important;
+    
+}
+canvas {
+    margin: auto;
+    display: block;
+    position: absolute;
+    top: 0; 
+    left: 0;
+    right: 0;
+    bottom: 0;
+    image-rendering: pixelated;
+}
+#help{
+    position: absolute;
+    top:51%;
+    left:45%
+}
+
+  #start {
+    position: fixed; 
+    top:45%; 
+    left:45%;
+    text-decoration: none;
+    display: inline-block;
+    padding: 15px 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 40px 40px black inset, 0 0 0 0 black;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: bold;
+    letter-spacing: 2px;
+    color: white;
+    transition: .15s ease-in-out;
+  }
+  #start:hover {
+    box-shadow: 0 0 10px 0 black inset, 0 0 10px 4px black;
+    color: black;
+  }

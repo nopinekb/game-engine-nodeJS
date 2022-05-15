@@ -1,6 +1,6 @@
-const socket = io('http://localhost:3000');
+//const socket = io('http://localhost:3000');
 
-//const socket = io.connect('https://game1231.herokuapp.com/', {secure: true});
+const socket = io.connect('https://game1231.herokuapp.com/', {secure: true});
 
 var canvas = document.getElementById("canvas");
 
@@ -10,11 +10,8 @@ canvas.height = window.innerHeight;
 
 var counter = document.getElementById('counter');
 var positionHTML = document.getElementById('position');
-var collisionRhtml = document.getElementById('collisionR');
-var collisionLhtml = document.getElementById('collisionL');
-var collisionUhtml = document.getElementById('collisionU');
-var collisionDhtml = document.getElementById('collisionD');
 var startBtn = document.getElementById('start');
+var help = document.getElementById('help');
 
 var LoopSpeed = 10;
 var PlayerID;
@@ -25,9 +22,9 @@ var centerX = canvas.width/2, centerY = canvas.height/2;
 var x = centerX, y = centerY, angle;
 var playerWidth = 20, playerHeight = 20, playerCenterW = playerWidth/2, playerCenterH = playerHeight/2;
 
-var LEFT=37, UP=38, RIGHT=39, DOWN=40;
-var left = 0, right = 0, up = 0, down = 0;
-var dirs = {[LEFT]:0, [UP]:0, [RIGHT]:0, [DOWN]:0};
+var LEFT=65, UP=87, RIGHT=68, DOWN=83 , SHIFT=16;
+var left = 0, right = 0, up = 0, down = 0, shift = 0;
+var dirs = {[LEFT]:0, [UP]:0, [RIGHT]:0, [DOWN]:0, [SHIFT]:0};
 var angle = Math.atan2(x, y) / Math.PI * 180;
 var Sx, Sy, Mx, My;
 var BMx, BMy;
@@ -39,7 +36,9 @@ var camera = {
   speed: 4
 };
 
-
+var mouseDown = 0;
+var out = 0;
+let clientObjects = [];
 
 
 function updateCameraSize() {
@@ -79,15 +78,19 @@ function PlayerControl() {
 		dirs[e.keyCode] = 1;
 	})
 
+	
+
 	$(document).keyup(function (e) {
 		dirs[e.keyCode] = 0;
 	})
 	  
 	setInterval(function () {
-		left = dirs[LEFT] * SPEED;
-		right = dirs[RIGHT] * SPEED;
-		up = dirs[UP] * SPEED;
-		down = dirs[DOWN] * SPEED;
+		left = dirs[LEFT];
+		right = dirs[RIGHT];
+		up = dirs[UP];
+		down = dirs[DOWN];
+		shift = dirs[SHIFT];
+
 		//camera.leftTopPos.x -= dirs[LEFT] * camera.speed ;
   		//camera.leftTopPos.x += dirs[RIGHT] * camera.speed;
   		//camera.leftTopPos.y -= dirs[UP] * camera.speed;
@@ -100,38 +103,46 @@ document.onmousemove = function(e){
 	let z = window.getComputedStyle(canvas).zoom || 1;     
 	Mx = e.pageX/z - e.target.offsetLeft,
 	My = e.pageY/z - e.target.offsetTop;
-    BMx = e.clientX + camera.leftTopPos.x;	
-    BMy = e.clientY + camera.leftTopPos.y;
+    BMx = e.clientX + x - centerX;	
+    BMy = e.clientY + y - centerY;
+	//console.log(BMx + " : " + BMy);
 
 }
-document.onmousedown = function(ve){
 
-	const mouse = {
-		id : PlayerID,
-		x : x,
-		y : y,
-		Sx : x,
-		Sy : y,
-		Mx: BMx,
-		My : BMy
-	}
-	socket.emit('mouse', mouse);
-   
+document.onmousedown = function() { 
+    mouseDown = 1;
+	
+	
 }
+document.onmouseup = function() {
+    mouseDown = 0;
+}
+
+
 
 
 		
 socket.on('draw', function(players, bullets){
 	
 	ctx.clearRect(0,0, canvasW,canvasH);
-	ctx.beginPath();
+	
 	ctx.save();
-	ctx.translate(-camera.leftTopPos.x * camera.scale, -camera.leftTopPos.y * camera.scale);
+	ctx.translate(-x+centerX * camera.scale, -y+centerY * camera.scale);
 
 	ctx.scale(camera.scale, camera.scale);
-	
-	for (var index = 0; index < players.length; ++index) {
 
+	for (var index = 0; index < bullets.length; ++index){
+		ctx.beginPath();
+		ctx.arc(bullets[index].x, bullets[index].y, 5, 0, 2 * Math.PI, false);
+		ctx.lineWidth = 1;	
+		ctx.strokeStyle = 'black';
+		//ctx.fillStyle = 'cyan';
+		ctx.fill();
+		ctx.stroke();
+	}
+
+	for (var index = 0; index < players.length; ++index) {
+		ctx.beginPath();
 		if(PlayerID == players[index].id){
 			x = players[index].x;
 			y = players[index].y;
@@ -147,7 +158,7 @@ socket.on('draw', function(players, bullets){
 		ctx.translate(players[index].x,players[index].y);
 		ctx.rotate(-angle * Math.PI / 180);
 
-		ctx.fillRect(players[index].x-players[index].x-playerCenterW,players[index].y-players[index].y-playerCenterH, playerWidth, playerHeight);
+		ctx.fillRect(-playerCenterW,-playerCenterH, playerWidth, playerHeight);
 
 		ctx.fillRect(players[index].x-players[index].x-5,players[index].y-players[index].y, 10, 15);
 
@@ -180,43 +191,55 @@ socket.on('draw', function(players, bullets){
 	   ctx.fill();
 	   ctx.stroke();
 	}
-	ctx.beginPath();
-	ctx.fillStyle = 'black';
-	ctx.fillRect(300,300,500,50);
-	ctx.fill();
-	ctx.stroke();
 
-	for (var index = 0; index < bullets.length; ++index){
-		ctx.beginPath();
-		ctx.arc(bullets[index].x, bullets[index].y, 5, 0, 2 * Math.PI, false);
-		ctx.fillStyle = 'cyan';
-		ctx.lineWidth = 2;	
-		ctx.strokeStyle = 'black';
-		ctx.fill();
-		ctx.stroke();
-	}
+
+		for (var index = 0; index < clientObjects.length; ++index) {
+			ctx.beginPath();
+			ctx.fillStyle = 'black';
+			ctx.fillRect(clientObjects[index].x,clientObjects[index].y,clientObjects[index].width,clientObjects[index].height);
+			ctx.fill();
+			ctx.stroke();
+		}
+	
+
+	
+	
+
 
 	ctx.restore();
-	positionCameraUpdate();
+	//positionCameraUpdate();
 
 });
 
-function positionCameraUpdate(){
-	if(x-camera.leftTopPos.x < centerX-5){
+socket.on('objectsUpdate', function(objects){
+	/*for (var index = 0; index < objects.length; ++index) {
+		var id1 = clientObjects.findIndex(el => el.x === objects[index].x && el.y === objects[index].y);
+			if(id1 == -1){
+				clientObjects.push({id : objects[index].id, x : objects[index].x, y : objects[index].y, 
+								width : objects[index].width, height : objects[index].height
+								});
+			}
+	}*/
+	clientObjects = objects;
+	console.log(clientObjects);
+});
 
-		camera.leftTopPos.x -= 3*(centerX/(x-camera.leftTopPos.x));
+/*function positionCameraUpdate(){
+	if(x-camera.leftTopPos.x < centerX-7){
+
+		camera.leftTopPos.x -= 2.5*(centerX/(x-camera.leftTopPos.x));
 
 	}
-	if(x-camera.leftTopPos.x > centerX+5){
-		camera.leftTopPos.x += 3*((x-camera.leftTopPos.x)/centerX);
+	if(x-camera.leftTopPos.x > centerX+7){
+		camera.leftTopPos.x += 2.5*((x-camera.leftTopPos.x)/centerX);
 	}
-	if(y-camera.leftTopPos.y < centerY-5){
-		camera.leftTopPos.y -= 3*(centerY/(y-camera.leftTopPos.y));
+	if(y-camera.leftTopPos.y < centerY-7){
+		camera.leftTopPos.y -= 2.5*(centerY/(y-camera.leftTopPos.y));
 	}
-	if(y-camera.leftTopPos.y > centerY+5){
-		camera.leftTopPos.y += 3*((y-camera.leftTopPos.y)/centerY);
+	if(y-camera.leftTopPos.y > centerY+7){
+		camera.leftTopPos.y += 2.5*((y-camera.leftTopPos.y)/centerY);
 	}
-}
+}*/
 
 function positionUpdate() {
 	const position = {
@@ -228,25 +251,46 @@ function positionUpdate() {
 		up: up, 
 		down: down,
 		Mx : Mx,
-		My : My
+		My : My,
+		out : out
 	};
 	socket.emit('position', position);
+
 
 	setTimeout(positionUpdate, LoopSpeed);
 }
 
-function drawCircle(ctx, x, y, radius, fill, stroke, strokeWidth) {
-  ctx.beginPath();
-  ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
-  if (fill) {
-    ctx.fillStyle = fill;
-    ctx.fill();
-  }
-  if (stroke) {
-    ctx.lineWidth = strokeWidth;
-    ctx.strokeStyle = stroke;
-  }
-  ctx.stroke()
+function shooting(){
+	if (mouseDown == 1) {
+		let mouse = {
+			id : PlayerID,
+			x : x,
+			y : y,
+			Sx : x,
+			Sy : y,
+			Mx: BMx,
+			My : BMy,
+			velocity : 0
+		}
+		socket.emit('mouse', mouse);
+	}
+		
+	   
+	
+	if(shift == 1){
+		let coords = {
+			id : PlayerID,
+			Mx: BMx,
+			My : BMy
+		}
+
+		socket.emit('object', coords);
+	}
+	
+	
+	console.log(shift);
+	
+	setTimeout(shooting, 200);
 }
 
 
@@ -255,6 +299,7 @@ socket.on('count', function(count) {
 	counter.innerHTML = "online: " + count;
 	counterPlayers = count;
 });
+
 
 
 startBtn.addEventListener('click', () => {
@@ -273,14 +318,15 @@ startBtn.addEventListener('click', () => {
 		downPush : downPush,
 		Mx : Mx,
 		My : My,
-		health : 200
 
 	};
     socket.emit('start', start);
     startBtn.remove();
+	help.remove();
     positionUpdate();
 	PlayerControl();
 	makeAlwaysCanvasFullscreen();
+	shooting();
 })
 
 
