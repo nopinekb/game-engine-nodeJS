@@ -2,7 +2,7 @@
 
 realased:
 
-- player movment
+- player movement
 - dinamic camera
 - shooting
 - HP system
